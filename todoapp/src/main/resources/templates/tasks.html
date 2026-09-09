@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Todo Application</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #6c63ff;
+            --background-color: #f5f7fb;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fb, #e9ecf5);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(135deg, #121212, #202124);
+        }
+
+        .app-wrapper {
+            max-width: 850px;
+            margin: auto;
+            padding-top: 55px;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .app-title {
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .app-subtitle {
+            color: #858585;
+        }
+
+        .theme-btn {
+            border-radius: 50px;
+            padding: 9px 18px;
+            font-weight: 600;
+        }
+
+        .task-form {
+            padding: 22px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        [data-bs-theme="dark"] .task-form {
+            background: rgba(35, 35, 35, 0.9);
+        }
+
+        .task-input {
+            height: 52px;
+            border-radius: 12px;
+            border: 1px solid #dfe3eb;
+        }
+
+        .add-btn {
+            height: 52px;
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6c63ff, #5148d8);
+            font-weight: 600;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(108, 99, 255, 0.35);
+        }
+
+        .task-card {
+            border: none;
+            border-radius: 15px;
+            margin-bottom: 14px;
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.07);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .task-title {
+            font-size: 1.05rem;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .text-strikethrough {
+            text-decoration: line-through;
+            color: #999 !important;
+        }
+
+        .action-btn {
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 576px) {
+            .app-wrapper {
+                padding: 30px 12px;
+            }
+
+            .app-header {
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .app-title {
+                font-size: 1.8rem;
+            }
+
+            .task-form .col-md-2 {
+                margin-top: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container app-wrapper">
+
+    <div class="app-header">
+        <div>
+            <h1 class="app-title mb-1">My Todo List</h1>
+            <p class="app-subtitle mb-0">Organize your day, one task at a time.</p>
+        </div>
+
+        <button id="darkModeBtn"
+                type="button"
+                class="btn btn-outline-secondary theme-btn">
+            🌙 Dark
+        </button>
+    </div>
+
+    <form action="/" method="post" class="row task-form g-2">
+        <div class="col-md-10">
+            <input class="form-control task-input"
+                   type="text"
+                   name="title"
+                   placeholder="What needs to be done?"
+                   required>
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-primary add-btn" type="submit">
+                + Add
+            </button>
+        </div>
+    </form>
+
+    <div class="mt-4">
+
+        <div th:if="${#lists.isEmpty(tasks)}"
+             class="text-center text-secondary py-5">
+            <div style="font-size: 3rem;">✅</div>
+            <h5 class="mt-3">No tasks yet</h5>
+            <p>Add your first task above.</p>
+        </div>
+
+        <th:block th:each="task : ${tasks}">
+            <div class="card task-card">
+                <div class="card-body d-flex justify-content-between align-items-center gap-3">
+
+                    <span class="task-title"
+                          th:classappend="${task.completed} ? ' text-strikethrough'"
+                          th:text="${task.title}">
+                        Task Title
+                    </span>
+
+                    <div class="d-flex flex-shrink-0 gap-2">
+                        <a th:href="@{/{id}/toggle(id=${task.id})}"
+                           class="btn btn-outline-secondary btn-sm action-btn">
+                            Toggle
+                        </a>
+
+                        <a th:href="@{/{id}/delete(id=${task.id})}"
+                           class="btn btn-outline-danger btn-sm action-btn">
+                            Delete
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </th:block>
+
+    </div>
+</div>
+
+<script>
+    const darkModeBtn = document.getElementById("darkModeBtn");
+    const html = document.documentElement;
+
+    function setTheme(theme) {
+        html.setAttribute("data-bs-theme", theme);
+        localStorage.setItem("todo-theme", theme);
+
+        if (theme === "dark") {
+            darkModeBtn.innerHTML = "☀️ Light";
+        } else {
+            darkModeBtn.innerHTML = "🌙 Dark";
+        }
+    }
+
+    const savedTheme = localStorage.getItem("todo-theme") || "light";
+    setTheme(savedTheme);
+
+    darkModeBtn.addEventListener("click", function () {
+        const currentTheme = html.getAttribute("data-bs-theme");
+        setTheme(currentTheme === "dark" ? "light" : "dark");
+    });
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+<!-- -&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-->
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Todo Application</title>-->
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">-->
+<!--    <style>-->
+<!--        .text-strikethrough{-->
+<!--        text-decoration: line-through;-->
+<!--        color: grey;-->
+<!--        }-->
+<!--        body{-->
+<!--        background-color: #ffffff;-->
+<!--        color: #212529;-->
+<!--        transition: background-color 0.3s, color 0.3s;-->
+<!--        }-->
+<!--        body.dark-mode{-->
+<!--        background-color: #121212;-->
+<!--        color: #ffffff;-->
+<!--    }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<div class="container">-->
+<!--    <button id="darkModeBtn" class="btn btn-secondary">-->
+<!--        Dark-->
+<!--    </button>-->
+
+<!--    <h1 class="mt-5 text-center">Todo Application</h1>-->
+<!--    <form action="/" method="post" class="row mt-3">-->
+<!--        <div class="col-md-10">-->
+<!--            <input class="form-control-lg" type="text" name="title" placeholder="Add a new task.." required>-->
+
+<!--        </div>-->
+<!--        <div class="col-md-2">-->
+<!--             <button class="btn btn-primary btn-lg btn-block" type="submit">Add</button>-->
+<!--        </div>-->
+
+<!--    </form>-->
+<!--    <div class="mt-4">-->
+<!--        <th:block th:each="task : ${tasks}">-->
+<!--            <div class="card mb-2">-->
+<!--                <div class="card-body d-flex justify-content-between align-items-center">-->
+<!--                     <span th:classappend="${task.completed}? 'text-strikethrough'" th:text="${task.title}"> Task Title</span>-->
+
+<!--                    <div>-->
+<!--                        <a th:href="@{/{id}/toggle(id=${task.id})}" class="btn btn-outline-secondary btn-sm">Toggle</a>-->
+<!--                        <a th:href="@{/{id}/delete(id=${task.id})}" class="btn btn-outline-danger btn-sm ml-2">Delete</a>-->
+
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </th:block>-->
+
+<!--    </div>-->
+<!--</div>-->
+<!--</body>-->
+<!--</html>-->
